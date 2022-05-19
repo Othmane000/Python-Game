@@ -239,8 +239,8 @@ def checkforInteraction(): # problemes de collision avec la portée de l'interac
     global interactionObj, canInteract, pathToMap, mapLoaded
     interactionObj = []
     for obj in tmx_data.objects: # boucle qui va permettre de filtrer entre les differents types d'objets enregistre dans la map
-        
-        if obj.type == 'interaction_static' or obj.type == 'interaction_pnj' or obj.type == 'door' :
+        print(f"tmx_data.objects: {obj.type} ; {obj.name}")
+        if obj.type == 'interaction_static' or obj.type == 'dungeon_door' or obj.type == 'interaction_pnj' :
             #creation d'un tuple qui prend l'objet de type collision et cree un Rect de meme taille et coordonne
             #on fait ca pour le comparer au Player['Rect']
             interactionObj.append( {'obj':obj, 'Rect':pygame.Rect(obj.x- 10,obj.y - 10,obj.width + 10,obj.height + 10), 'Name': obj.name, 'Text':f" Bonjour je suis {obj.name}"} )
@@ -248,7 +248,7 @@ def checkforInteraction(): # problemes de collision avec la portée de l'interac
     
     for pnj in interactionObj:
         if pnj['Rect'].colliderect(Player['PlayerRect']) :
-            print(interactionObj)
+            #print(interactionObj)
             pygame.draw.rect(window, (255,0,0), pnj['Rect'], 2)
             pygame.display.flip()
             canInteract = True
@@ -258,7 +258,7 @@ def checkforInteraction(): # problemes de collision avec la portée de l'interac
             if pnj['obj'].type == 'interaction_pnj':
                 if keyPressed[pygame.K_e] == True and canInteract == True:
                     DrawSpeechBubble(pnj['Text'], pnj['Name'])
-            if pnj['obj'].type == 'door':
+            if pnj['obj'].type == 'dungeon_door':
                 print("collision with door")
                 if keyPressed[pygame.K_e] == True and canInteract == True:
                     mapLoaded = False
