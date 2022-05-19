@@ -46,12 +46,16 @@ Monster = {'MonsterImage':pygame.transform.scale(pygame.image.load("alien.png"),
  'MonsterPosition': (568,241),
  'MonsterRect': pygame.Rect(568,241,64,64) }
 
+# Barre de vie du joueur
+health = 100
 
-mousePosition = (0,0)
+
+
 
 
 # mettre en place les projectiles, les bullets, et collisions
 projectile = [(Monster['MonsterPosition'][0]+32, Monster['MonsterPosition'][1]+32)]
+mousePosition = (0,0) # afin de pouvoir viser les monstres
 bullets = []
 walls = []
 
@@ -66,29 +70,43 @@ def get_player_image(x,y): # x and y represent the position of the player image 
 
 
 def draw():
-    global player,window, Monster, projectile, throw_time, calqueGroupe
+    global player,window, Monster, projectile, throw_time, calqueGroupe, health
     player = get_player_image(Player['SpriteSheetPlayerPosition'][0],Player['SpriteSheetPlayerPosition'][1])
     #player = pygame.transform.scale(player,(64,64)) # permet de modifier la taille du personnage a l'echelle
     window.fill((0,0,0))
     #on affiche la tileMap
     calqueGroupe.draw(window)
     window.blit(player, (Player['InitPlayerPosition'][0], Player['InitPlayerPosition'][1]))
-    pygame.draw.rect(window,(0,0,255),Player['PlayerRect'], 2)
-    pygame.draw.rect(window,(0,0,255),Monster['MonsterRect'], 2)
+    pygame.draw.rect(window,(0,0,255),Player['PlayerRect'], 2) # on dessine la hitbox du Player
+    pygame.draw.rect(window,(0,0,255),Monster['MonsterRect'], 2) # on dessine la hitbox du Monstre
+    pygame.draw.rect(window,(0,0,0),pygame.Rect(30,15,110,30)) # on dessine le fond cadre de la barre de vie
+    pygame.draw.rect(window,(255,0,0),pygame.Rect(35,20,health,20)) # on dessine la barre de vie
     #print(f"{[Player['PlayerRect'].x, Player['PlayerRect'].y, Player['PlayerRect'].width, Player['PlayerRect'].height]}")
     window.blit(Monster['MonsterImage'], (Monster['MonsterPosition'][0], Monster['MonsterPosition'][1]))
+
     for elt in projectile:
+        projectile_rect = pygame.Rect(elt[0]-7, elt[1]-7, 14, 14)
         if elt != (-1,-1):
             pygame.draw.circle(window, (255,255,255), elt, 7) # dessin du projectile --> a modifier par un asset (.png)
-            if Player['InitPlayerPosition'][0]<=elt[0]<= Player['InitPlayerPosition'][0]+16 and Player['InitPlayerPosition'][1]<=elt[1]<= Player['InitPlayerPosition'][1]+16:
-                elt = (-1,-1)
+            pygame.draw.rect(window,(255,0,0), projectile_rect, 2)
         if elt[1] == 0:
             elt = (-1,-1)
+        if pygame.Rect.colliderect(projectile_rect,Player['PlayerRect']):
+            health = health - 2
+            print(health)
+            print("Projectile WHITE removed")
+            projectile.remove(elt)
+         
 
     
     for elt in range(len(bullets)):
+        bullets_rect = pygame.Rect(bullets[elt][0]-7, bullets[elt][1]-7, 14, 14)
         if bullets[elt] != (-1,-1) :
             pygame.draw.circle(window, (255,0,0), bullets[elt], 7)
+            pygame.draw.rect(window,(0,0,255), bullets_rect, 2)
+        if pygame.Rect.colliderect(bullets_rect,Monster['MonsterRect']):
+            print("Projectile RED removed.")
+            bullets[elt] = (-1,-1) 
 
     pygame.display.flip()
 
@@ -321,9 +339,10 @@ while loop == True:
     bulletspeedy = (mousePosition[1]-Player['InitPlayerPosition'][1]) / 10
 
     for elt in bullets:
-        bullettemp = (elt[0] + bulletspeedx, elt[1] + bulletspeedy) # a remplacer par difference entrre mouseposition et playerposition
-        bullets.remove(elt)
-        bullets.insert(0,bullettemp)
+        if elt != (-1,-1):
+            bullettemp = (elt[0] + bulletspeedx, elt[1] + bulletspeedy) # a remplacer par difference entrre mouseposition et playerposition
+            bullets.remove(elt)
+            bullets.insert(0,bullettemp)
     for elt in bullets:
         if elt[1]<0 or elt[0] < 0 or elt[1] > 800 or elt[0] > 800:
             bullets.remove(elt)
