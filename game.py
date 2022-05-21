@@ -25,7 +25,7 @@ anim=0
 compteur = 0 # permet de ralentir le changement d'animation par rapport au clock.tick
 
 walk_speed = 1.5
-sprint_speed = 3.75
+sprint_speed = 2.75
 direction = 0 # Droite : 1 ; Bas : 2 ; Gauche = 3 ; Haut : 4
 
 # jump
@@ -258,11 +258,14 @@ def checkforInteraction(): # problemes de collision avec la portée de l'interac
             if pnj['obj'].type == 'interaction_pnj':
                 if keyPressed[pygame.K_e] == True and canInteract == True:
                     DrawSpeechBubble(pnj['Text'], pnj['Name'])
+                    if keyPressed[pygame.K_e] == True and canInteract == True:
+                        mapLoaded = False
+                        pathToMap = 'tilesetTMX\\dungeon.tmx'
             if pnj['obj'].type == 'dungeon_door':
                 print("collision with door")
-                if keyPressed[pygame.K_e] == True and canInteract == True:
+                """if keyPressed[pygame.K_e] == True and canInteract == True:
                     mapLoaded = False
-                    pathToMap = 'tilesetTMX\\dungeon.tmx'
+                    pathToMap = 'tilesetTMX\\dungeon.tmx'"""
 
 
 loop = True
