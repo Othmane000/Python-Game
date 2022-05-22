@@ -44,7 +44,8 @@ Player= {'PlayerImage':pygame.image.load('1620294984-you.png'),
 # Monster dict
 Monster = {'MonsterImage':pygame.transform.scale(pygame.image.load("alien.png"), (64,64)),
  'MonsterPosition': (568,241),
- 'MonsterRect': pygame.Rect(568,241,64,64) }
+ 'MonsterRect': pygame.Rect(568,241,64,64),
+ 'MonsterThere': False }
 
 # Barre de vie du joueur
 health = 100
@@ -78,24 +79,27 @@ def draw():
     calqueGroupe.draw(window)
     window.blit(player, (Player['InitPlayerPosition'][0], Player['InitPlayerPosition'][1]))
     pygame.draw.rect(window,(0,0,255),Player['PlayerRect'], 2) # on dessine la hitbox du Player
-    pygame.draw.rect(window,(0,0,255),Monster['MonsterRect'], 2) # on dessine la hitbox du Monstre
+    if Monster['MonsterThere'] == True:
+        pygame.draw.rect(window,(0,0,255),Monster['MonsterRect'], 2) # on dessine la hitbox du Monstre
     pygame.draw.rect(window,(0,0,0),pygame.Rect(30,15,110,30)) # on dessine le fond cadre de la barre de vie
     pygame.draw.rect(window,(255,0,0),pygame.Rect(35,20,health,20)) # on dessine la barre de vie
     #print(f"{[Player['PlayerRect'].x, Player['PlayerRect'].y, Player['PlayerRect'].width, Player['PlayerRect'].height]}")
-    window.blit(Monster['MonsterImage'], (Monster['MonsterPosition'][0], Monster['MonsterPosition'][1]))
+    if Monster['MonsterThere'] == True:
+        window.blit(Monster['MonsterImage'], (Monster['MonsterPosition'][0], Monster['MonsterPosition'][1]))
 
-    for elt in projectile:
-        projectile_rect = pygame.Rect(elt[0]-7, elt[1]-7, 14, 14)
-        if elt != (-1,-1):
-            pygame.draw.circle(window, (255,255,255), elt, 7) # dessin du projectile --> a modifier par un asset (.png)
-            pygame.draw.rect(window,(255,0,0), projectile_rect, 2)
-        if elt[1] == 0:
-            elt = (-1,-1)
-        if pygame.Rect.colliderect(projectile_rect,Player['PlayerRect']):
-            health = health - 2
-            print(health)
-            print("Projectile WHITE removed")
-            projectile.remove(elt)
+    if Monster['MonsterThere'] == True:
+        for elt in projectile:
+            projectile_rect = pygame.Rect(elt[0]-7, elt[1]-7, 14, 14)
+            if elt != (-1,-1):
+                pygame.draw.circle(window, (255,255,255), elt, 7) # dessin du projectile --> a modifier par un asset (.png)
+                pygame.draw.rect(window,(255,0,0), projectile_rect, 2)
+            if elt[1] == 0:
+                elt = (-1,-1)
+            if pygame.Rect.colliderect(projectile_rect,Player['PlayerRect']):
+                health = health - 2
+                print(health)
+                print("Projectile WHITE removed")
+                projectile.remove(elt)
          
 
     
@@ -261,11 +265,9 @@ def checkforInteraction(): # problemes de collision avec la portée de l'interac
                     if keyPressed[pygame.K_e] == True and canInteract == True:
                         mapLoaded = False
                         pathToMap = 'tilesetTMX\\dungeon.tmx'
+                        Monster['MonsterThere'] = True
             if pnj['obj'].type == 'dungeon_door':
                 print("collision with door")
-                """if keyPressed[pygame.K_e] == True and canInteract == True:
-                    mapLoaded = False
-                    pathToMap = 'tilesetTMX\\dungeon.tmx'"""
 
 
 loop = True
