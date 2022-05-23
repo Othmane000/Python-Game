@@ -1,3 +1,4 @@
+from cmath import rect
 import pygame, csv
 from random import randint
 from math import atan2, degrees
@@ -13,7 +14,7 @@ pygame.init()
 
 
 window = pygame.display.set_mode((800,800)) # fenetre de taille : 800x800
-pygame.display.set_caption("PyGame - Pokemon")
+pygame.display.set_caption("My Game")
 
 
 
@@ -36,10 +37,11 @@ startgame_time = datetime.now()
 delta_time = [startgame_time] # initialiser la boucle avec le temps a laquelle elle a ete cree
 
 # Player dict
-Player= {'PlayerImage':pygame.image.load('1620294984-you.png'),
+Player= {'PlayerImage':pygame.image.load('player.png'),
  'InitPlayerPosition':(100,400),
   'SpriteSheetPlayerPosition':(0,0),
-  'PlayerRect': pygame.Rect(100,400,32,32)}
+  'PlayerRect': pygame.Rect(100,400,32,32),
+  'PlayerItems': 0}
 
 # Monster dict
 Monster = {'MonsterImage':pygame.transform.scale(pygame.image.load("alien.png"), (64,64)),
@@ -47,9 +49,19 @@ Monster = {'MonsterImage':pygame.transform.scale(pygame.image.load("alien.png"),
  'MonsterRect': pygame.Rect(568,241,64,64),
  'MonsterThere': False }
 
+#Items dict 
+Items={'casque':False,
+    'plastron': False,
+    'jambiere':True,
+    'gantelet': False}
+
+loot= [True,True,True,True] # ces booleens vont nous permettre de ne pas looter plusieurs fois le meme coffre/personne, ce serait trop facil
+# ces booleens refere au fait qu'ils sont "lootables" ou non
+
+
 # Barre de vie du joueur
 health = 100
-
+degats = 0
 
 
 
@@ -71,18 +83,17 @@ def get_player_image(x,y): # x and y represent the position of the player image 
 
 
 def draw():
-    global player,window, Monster, projectile, throw_time, calqueGroupe, health
+    global player,window, Monster, projectile, throw_time, calqueGroupe, health, armure, degats
     player = get_player_image(Player['SpriteSheetPlayerPosition'][0],Player['SpriteSheetPlayerPosition'][1])
     #player = pygame.transform.scale(player,(64,64)) # permet de modifier la taille du personnage a l'echelle
     window.fill((0,0,0))
     #on affiche la tileMap
     calqueGroupe.draw(window)
+    DrawHUD()
     window.blit(player, (Player['InitPlayerPosition'][0], Player['InitPlayerPosition'][1]))
     pygame.draw.rect(window,(0,0,255),Player['PlayerRect'], 2) # on dessine la hitbox du Player
     if Monster['MonsterThere'] == True:
         pygame.draw.rect(window,(0,0,255),Monster['MonsterRect'], 2) # on dessine la hitbox du Monstre
-    pygame.draw.rect(window,(0,0,0),pygame.Rect(30,15,110,30)) # on dessine le fond cadre de la barre de vie
-    pygame.draw.rect(window,(255,0,0),pygame.Rect(35,20,health,20)) # on dessine la barre de vie
     #print(f"{[Player['PlayerRect'].x, Player['PlayerRect'].y, Player['PlayerRect'].width, Player['PlayerRect'].height]}")
     if Monster['MonsterThere'] == True:
         window.blit(Monster['MonsterImage'], (Monster['MonsterPosition'][0], Monster['MonsterPosition'][1]))
@@ -96,10 +107,13 @@ def draw():
             if elt[1] == 0:
                 elt = (-1,-1)
             if pygame.Rect.colliderect(projectile_rect,Player['PlayerRect']):
-                health = health - 2
-                print(health)
-                print("Projectile WHITE removed")
+                if armure > 0:
+                    degats -= 3
+                else:
+                    health = health - 2
+                    print(health)
                 projectile.remove(elt)
+                    
          
 
     
@@ -116,7 +130,7 @@ def draw():
 
 
 def get_input():
-    global keyPressed, anim, speed, direction, projectile, IsProjectile, delta_time, Player, canInteract, Monster
+    global keyPressed, anim, speed, direction, projectile, IsProjectile, delta_time, Player, canInteract, Monster, mousePosition
     keyPressed = pygame.key.get_pressed()
     #  *** Gerer le spawn du projectile
     if tick_compteur // 25 == 3 and tick_compteur % 25 == 0: # (datetime.now() - delta_time[0]).total_seconds() >=0.75
@@ -142,7 +156,7 @@ def get_input():
               
         Player['InitPlayerPosition'] = (Player['InitPlayerPosition'][0], Player['InitPlayerPosition'][1] - walk_speed)
         #Player['PlayerRect'].y = Player['PlayerRect'].y - 5
-        Player['SpriteSheetPlayerPosition'] = (anim,96)
+        Player['SpriteSheetPlayerPosition'] = (anim,0)
 
         
 
@@ -153,7 +167,7 @@ def get_input():
             
         Player['InitPlayerPosition'] = (Player['InitPlayerPosition'][0], Player['InitPlayerPosition'][1] + walk_speed)
         #Player['PlayerRect'].y = Player['PlayerRect'].y + 5
-        Player['SpriteSheetPlayerPosition'] = (anim,0)
+        Player['SpriteSheetPlayerPosition'] = ((64+anim),0)
 
     elif keyPressed[pygame.K_d] == True:
         direction = 1
@@ -162,7 +176,7 @@ def get_input():
  
         Player['InitPlayerPosition'] = (Player['InitPlayerPosition'][0]+walk_speed, Player['InitPlayerPosition'][1])
         #Player['PlayerRect'].x = Player['PlayerRect'].x + 5
-        Player['SpriteSheetPlayerPosition'] = (anim,64)
+        Player['SpriteSheetPlayerPosition'] = ((64+anim),32)
 
     elif keyPressed[pygame.K_a] == True:
         direction = 3
@@ -173,8 +187,6 @@ def get_input():
         #Player['PlayerRect'].x = Player['PlayerRect'].x - 5
         Player['SpriteSheetPlayerPosition'] = (anim,32)
 
-    if keyPressed[pygame.K_e] == True and canInteract == True: # need to add dialogState == True so the player doesnt trigger interaction if he isnt close to a pnj
-        DrawSpeechBubble('Hello this is a test', 'ADMIN')
 
 
 
@@ -184,7 +196,7 @@ def checkCollision(): # pour etablir les collisions entre Player et son environn
     global collisionObj, Player, window
     collisionObj = []
     for obj in tmx_data.objects: # boucle qui va permettre de filtrer entre les differents types d'objets enregistre dans la map
-        if obj.type == 'collision':
+        if obj.type == 'collision' or obj.type == 'collision_chest':
             #creation d'un tuple qui prend l'objet de type collision et cree un Rect de meme taille et coordonne
             #on fait ca pour le comparer au Player['Rect']
             collisionObj.append( {'obj':obj,'Rect': pygame.Rect(obj.x,obj.y,obj.width,obj.height), 'Name': obj.name, 'Type': obj.type} ) # {'obj':obj, 'Rect':pygame.Rect(obj.x- 10,obj.y - 10,obj.width + 10,obj.height + 10), 'Name': obj.name, 'Text':f" Bonjour je suis {obj.name}"}
@@ -198,7 +210,7 @@ def checkCollision(): # pour etablir les collisions entre Player et son environn
                 print(f"COLLIDE ON RIGHT SIDE OF THE OBJECT {obj['Name']}")
                 pygame.draw.rect(window, (255,0,0), obj['Rect'], 2)
                 pygame.display.flip()
-                Player['InitPlayerPosition']= (obj['Rect'].x + obj['Rect'].width, Player['InitPlayerPosition'][1])
+                Player['InitPlayerPosition']= ((obj['Rect'].x + obj['Rect'].width + 3), Player['InitPlayerPosition'][1])
 
 
             # Collision avec un objet cote GAUCHE (de l'objet)
@@ -206,7 +218,7 @@ def checkCollision(): # pour etablir les collisions entre Player et son environn
                 print(f"COLLIDE ON LEFT SIDE OF THE OBJECT {obj['Name']}")
                 pygame.draw.rect(window, (255,0,0), obj['Rect'], 2)
                 pygame.display.flip()
-                Player['InitPlayerPosition']= (obj['Rect'].x - Player['PlayerRect'].width, Player['InitPlayerPosition'][1])
+                Player['InitPlayerPosition']= ((obj['Rect'].x - Player['PlayerRect'].width - 3), Player['InitPlayerPosition'][1])
                 
 
             # Collision avec un objet cote BOTTOM (de l'objet)
@@ -214,17 +226,18 @@ def checkCollision(): # pour etablir les collisions entre Player et son environn
                 print(f"COLLIDE ON BOTTOM SIDE OF THE OBJECT {obj['Name']}")
                 pygame.draw.rect(window, (255,0,0), obj['Rect'], 2)
                 pygame.display.flip()
-                Player['InitPlayerPosition']= (Player['InitPlayerPosition'][0],obj['Rect'].y + obj['Rect'].height)
+                Player['InitPlayerPosition']= (Player['InitPlayerPosition'][0],(obj['Rect'].y + obj['Rect'].height + 3))
     
             # Collision avec un objet cote TOP (de l'objet)
             elif direction == 2 and (obj['Rect'].top - Player['PlayerRect'].bottom) < 0 and (Player['PlayerRect'].y + Player['PlayerRect'].height) > obj['Rect'].y:
                 print(f"COLLIDE ON TOP SIDE OF THE OBJECT {obj['Name']}")
                 pygame.draw.rect(window, (255,0,0), obj['Rect'], 2)
                 pygame.display.flip()
-                Player['InitPlayerPosition']= (Player['InitPlayerPosition'][0],obj['Rect'].y - Player['PlayerRect'].height)
+                Player['InitPlayerPosition']= (Player['InitPlayerPosition'][0],(obj['Rect'].y - Player['PlayerRect'].height - 3))
             
             
             
+
 
 
 
@@ -240,11 +253,11 @@ def DrawSpeechBubble(text, speaker): # interaction avec l'environnement.
     pygame.display.flip()
     
 def checkforInteraction(): # problemes de collision avec la portée de l'interaction (collision des rects), meme prblm qu'avec l'environnement A FIXER
-    global interactionObj, canInteract, pathToMap, mapLoaded
+    global interactionObj, canInteract, pathToMap, mapLoaded, tmx_data
     interactionObj = []
     for obj in tmx_data.objects: # boucle qui va permettre de filtrer entre les differents types d'objets enregistre dans la map
-        print(f"tmx_data.objects: {obj.type} ; {obj.name}")
-        if obj.type == 'interaction_static' or obj.type == 'dungeon_door' or obj.type == 'interaction_pnj' :
+        #print(f"tmx_data.objects: {obj.type} ; {obj.name}")
+        if obj.type == 'interaction_static' or obj.type == 'dungeon_door' or obj.type == 'interaction_pnj' or obj.type == 'collision_chest' :
             #creation d'un tuple qui prend l'objet de type collision et cree un Rect de meme taille et coordonne
             #on fait ca pour le comparer au Player['Rect']
             interactionObj.append( {'obj':obj, 'Rect':pygame.Rect(obj.x- 10,obj.y - 10,obj.width + 10,obj.height + 10), 'Name': obj.name, 'Text':f" Bonjour je suis {obj.name}"} )
@@ -259,27 +272,71 @@ def checkforInteraction(): # problemes de collision avec la portée de l'interac
             if pnj['obj'].type == 'interaction_static' :
                 if keyPressed[pygame.K_e] == True and canInteract == True:
                     DrawSpeechBubble(pnj['Text'], pnj['Name'])
-            if pnj['obj'].type == 'interaction_pnj':
+            if pnj['obj'].type == 'interaction_pnj' :
                 if keyPressed[pygame.K_e] == True and canInteract == True:
                     DrawSpeechBubble(pnj['Text'], pnj['Name'])
-                    if keyPressed[pygame.K_e] == True and canInteract == True:
-                        mapLoaded = False
-                        pathToMap = 'tilesetTMX\\dungeon.tmx'
-                        Monster['MonsterThere'] = True
-            if pnj['obj'].type == 'dungeon_door':
-                print("collision with door")
+            
+            if pnj['obj'].name == 'chest1' and loot[0] == True : # choisir un item parmis 4 disponible # verifie si le coffre est lootable
+                item = randint(0,3)
+                liste_items = ['casque','plastron','jambiere','gantelet']
+                if keyPressed[pygame.K_e] == True and canInteract == True:
+                    Items[liste_items[item]] = True 
+                    loot[0] = False
+                else: print("not lootable, try later.")
+                
 
+
+
+            if pnj['obj'].type == 'dungeon_door':
+                if keyPressed[pygame.K_e] == True and canInteract == True:
+                    mapLoaded = False
+                    pathToMap = 'tilesetTMX\\dungeon.tmx'
+                    Monster['MonsterThere'] = True
+                    #pygame.time.wait(3000)
+
+
+def DrawHUD():
+    rect_health = pygame.Rect(35,20,health,20) # barre de vie variable
+    rect_armure = pygame.Rect((35,40),(armure,20)) # barre d'armure --> en fonction du nombre d'items du Player
+    pygame.draw.rect(window,(0,0,0),pygame.Rect(30,15,110,30)) # cadre noir de la barre de vie
+    pygame.draw.rect(window,(0,0,0),pygame.Rect(30,45,110,30)) # cadre noir de la barre d'armure
+    pygame.draw.rect(window,(255,0,0),rect_health) # on dessine la barre de vie
+    pygame.draw.rect(window,(0,0,255),rect_armure) # on dessine la barre d'armure
+    lines = 0
+    rect_inventaire = pygame.Rect(200,-1,400,50)
+    pygame.draw.rect(window,(0,0,0), rect_inventaire)
+    for i in range(4):
+        pygame.draw.line(window, (255,255,255), (300+lines,0),(300+lines,50), width=2)
+        lines = lines + 100
+    if Items['casque'] == True:
+        casque = pygame.transform.scale(pygame.image.load("assets\\heavy-helm.png"),(50,50))
+        window.blit(casque,(rect_inventaire.x + 25, rect_inventaire.y))
+    if Items['gantelet'] == True:
+        casque = pygame.transform.scale(pygame.image.load("assets\\gauntlet.png"),(50,50))
+        window.blit(casque,(rect_inventaire.x + 125, rect_inventaire.y))
+    if Items['jambiere'] == True:
+        casque = pygame.transform.scale(pygame.image.load("assets\\leg-armor.png"),(50,50))
+        window.blit(casque,(rect_inventaire.x + 225, rect_inventaire.y))
+    if Items['plastron'] == True:
+        casque = pygame.transform.scale(pygame.image.load("assets\\abdominal-armor.png"),(50,50))
+        window.blit(casque,(rect_inventaire.x + 325, rect_inventaire.y))
 
 loop = True
 # on definit le tick rate
 clock = pygame.time.Clock()
 tick_compteur = 0
 mapLoaded = False
-pathToMap = 'tilesetTMX\\untitled.tmx'
+pathToMap = 'tilesetTMX\\spawn_map.tmx'
 while loop == True:
-    clock.tick(60) # meaning it refreshes 25 times a sec --> 1 sec = 25 frames ---- 5 secs = 25 * 5 = 125
+    
+    # A utiliser pour plus tard : pygame.time.wait(nMilliseconds)
+
+    clock.tick(50) # meaning it refreshes 25 times a sec --> 1 sec = 25 frames ---- 5 secs = 25 * 5 = 125
     mousePosition = pygame.mouse.get_pos() # permet de viser l'ennemi pour tirer les projectiles.
     
+    
+    
+
     # Ce bloc de code nous permet de pouvoir generer une map selon la condition ou le stade du jeu.
     if mapLoaded == False:
         # charger la map
@@ -288,7 +345,7 @@ while loop == True:
         map_layer = pyscroll.orthographic.BufferedRenderer(map_data, window.get_size())
 
         # dessiner le groupe de calque 
-        calqueGroupe = pyscroll.PyscrollGroup(map_layer=map_layer, default_layer=3)
+        calqueGroupe = pyscroll.PyscrollGroup(map_layer=map_layer, default_layer=1)
         mapLoaded = True
     
     
@@ -304,8 +361,8 @@ while loop == True:
 
     if compteur % 5 == 0:
         if anim == 0:
-            anim = 64
-        elif anim == 64:
+            anim = 32
+        elif anim == 32:
             anim = 0
 
     # definition de la distance x et y entre le monstre et le joueur 
@@ -322,12 +379,23 @@ while loop == True:
     ballspeedY = dy / 10
     ballspeed = (ballspeedX,ballspeedY)
 
-        
+    
+    for i in Items:
+        if Items[i] == True:
+            Player['PlayerItems'] += 1
+    
+    # barre d'armure 
+    armure = 25*Player['PlayerItems']+degats # on loot des items, donc on peut augmenter en arumure,elle n;est pas fixe des l'initialisation
+    print(armure)
     # on appelle les fonctions
+    
     get_input()
     checkCollision()
     draw()
     checkforInteraction()
+    
+    Player['PlayerItems'] = 0
+    #Player['PlayerItems'] = 0 # l'image s'est cree, PlayerItems a influence lexecution, on le re-assigne a 0 pour traiter l'image suivante
     
     for elt in projectile:    # Premiere boucle qui fait bouger les projectiles
         projectemp = (elt[0] + ballspeed[0], elt[1] + ballspeed[1]) # deplacement du projectile vers sa cible # l_speed[i-1][0] == ballspeedX #
