@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.8" tiledversion="1.8.4" orientation="orthogonal" renderorder="right-down" width="50" height="50" tilewidth="16" tileheight="16" infinite="0" nextlayerid="6" nextobjectid="83">
+<map version="1.8" tiledversion="1.8.4" orientation="orthogonal" renderorder="right-down" width="50" height="50" tilewidth="16" tileheight="16" infinite="0" nextlayerid="6" nextobjectid="90">
  <tileset firstgid="1" source="tileset1.tsx"/>
  <tileset firstgid="51" source="tileset2.tsx"/>
  <tileset firstgid="161" source="tileset3.tsx"/>
@@ -229,5 +229,12 @@
   <object id="79" type="collision" x="388" y="629.333" width="86.6667" height="22.6667"/>
   <object id="81" type="collision" x="582" y="631.333" width="214" height="20.6667"/>
   <object id="82" name="chest1" type="collision_chest" x="401" y="673" width="15" height="13"/>
+  <object id="83" name="water2" type="collision" x="30" y="580" width="49" height="26"/>
+  <object id="84" name="water" type="collision" x="399" y="710" width="398" height="87"/>
+  <object id="85" type="collision" x="561" y="339" width="15" height="25"/>
+  <object id="87" name="dungeon" type="collision" x="389" y="38" width="289" height="96"/>
+  <object id="89" type="collision" x="519" y="144" width="37" height="12">
+   <ellipse/>
+  </object>
  </objectgroup>
 </map>
