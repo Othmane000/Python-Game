@@ -1,7 +1,6 @@
-from cmath import rect
 import pygame, csv
 from random import randint
-from math import atan2, degrees
+from math import atan2, degrees, pi
 from datetime import datetime
 import pytmx
 import pyscroll
@@ -63,12 +62,14 @@ loot= [True,True,True,True] # ces booleens vont nous permettre de ne pas looter 
 health = 100
 degats = 0
 
+# barre de vie du monstre
+Monster_health = 220
 
 
 
 # mettre en place les projectiles, les bullets, et collisions
-projectile = [(Monster['MonsterPosition'][0]+32, Monster['MonsterPosition'][1]+32)]
-mousePosition = (0,0) # afin de pouvoir viser les monstres
+projectile = []
+arc = []
 bullets = []
 walls = []
 
@@ -83,15 +84,15 @@ def get_player_image(x,y): # x and y represent the position of the player image 
 
 
 def draw():
-    global player,window, Monster, projectile, throw_time, calqueGroupe, health, armure, degats
+    global player,window, Monster, projectile, throw_time, calqueGroupe, health, armure, degats, Monster_health
     player = get_player_image(Player['SpriteSheetPlayerPosition'][0],Player['SpriteSheetPlayerPosition'][1])
-    #player = pygame.transform.scale(player,(64,64)) # permet de modifier la taille du personnage a l'echelle
     window.fill((0,0,0))
     #on affiche la tileMap
     calqueGroupe.draw(window)
     DrawHUD()
     window.blit(player, (Player['InitPlayerPosition'][0], Player['InitPlayerPosition'][1]))
     pygame.draw.rect(window,(0,0,255),Player['PlayerRect'], 2) # on dessine la hitbox du Player
+    pygame.draw.line(window,(255,255,255),Player['InitPlayerPosition'],(mousePosition[0],mousePosition[1]), width=1) # essayer de reduire la taille de la ligne
     if Monster['MonsterThere'] == True:
         pygame.draw.rect(window,(0,0,255),Monster['MonsterRect'], 2) # on dessine la hitbox du Monstre
     #print(f"{[Player['PlayerRect'].x, Player['PlayerRect'].y, Player['PlayerRect'].width, Player['PlayerRect'].height]}")
@@ -108,11 +109,25 @@ def draw():
                 elt = (-1,-1)
             if pygame.Rect.colliderect(projectile_rect,Player['PlayerRect']):
                 if armure > 0:
-                    degats -= 3
+                    degats -= 2
                 else:
                     health = health - 2
                     print(health)
                 projectile.remove(elt)
+
+        for elt in arc:
+            arc_rect = pygame.Rect(elt[0],elt[1],30,30)
+            if elt != (-1,-1):
+                pygame.draw.arc(window, (0,0,0), arc_rect, 3*pi/4, 3*pi/2, width=2) # dessin du projectile --> a modifier par un asset (.png)
+            if pygame.Rect.colliderect(arc_rect,Player['PlayerRect']):
+                if armure > 0:
+                    degats -= 4
+                    arc.remove(elt)
+                else:
+                    health = health - 4
+                    print(health)
+                    arc.remove(elt)
+                
                     
          
 
@@ -123,26 +138,28 @@ def draw():
             pygame.draw.circle(window, (255,0,0), bullets[elt], 7)
             pygame.draw.rect(window,(0,0,255), bullets_rect, 2)
         if pygame.Rect.colliderect(bullets_rect,Monster['MonsterRect']):
-            print("Projectile RED removed.")
+            Monster_health = Monster_health -4
             bullets[elt] = (-1,-1) 
 
     pygame.display.flip()
 
 
 def get_input():
-    global keyPressed, anim, speed, direction, projectile, IsProjectile, delta_time, Player, canInteract, Monster, mousePosition
+    global keyPressed, anim, speed, direction, projectile, IsProjectile, Player, canInteract, Monster, mousePosition, bullet_cooldown
     keyPressed = pygame.key.get_pressed()
     #  *** Gerer le spawn du projectile
-    if tick_compteur // 25 == 3 and tick_compteur % 25 == 0: # (datetime.now() - delta_time[0]).total_seconds() >=0.75
-        projectile.append((Monster['MonsterPosition'][0]+32, Monster['MonsterPosition'][1]+32))
-        throw_time = datetime.now() # enregistre le temps au moment de l'ajout du projectile dans la liste de projectile a lancer
-        delta_time.insert(0,throw_time) # ajoute ce temps a la liste de temps pour comparer le temps entre le dernier lancer et celui demander
+    if Monster['MonsterThere'] == True: # afin que les projectiles ne s'accumulent pas tout dans la liste et ne soit pas envoyer tous d'un coup, on evite un bug
+        if projectile_cooldown % tick == 0:
+            projectile.append((Monster['MonsterPosition'][0]+32, Monster['MonsterPosition'][1]+32))
+        if projectile_cooldown % (3*tick) == 0:
+            arc.append((Monster['MonsterPosition'][0]+32, Monster['MonsterPosition'][1]+32))
         
-    # gerer le input des Bullets
-    for event in pygame.event.get():
-        if event.type == pygame.MOUSEBUTTONDOWN:
-            mousePosition = pygame.mouse.get_pos()
-            bullets.append((Player['InitPlayerPosition'][0] + 8,Player['InitPlayerPosition'][1] + 8))
+        # gerer le input des Bullets
+        for event in pygame.event.get():
+            if event.type == pygame.MOUSEBUTTONDOWN  and bullet_cooldown / (1.25*tick) >= 1:
+                mousePosition = pygame.mouse.get_pos()
+                bullets.append((Player['InitPlayerPosition'][0] + 8,Player['InitPlayerPosition'][1] + 8))
+                bullet_cooldown = 0
 
     # *** Gerer le mouvement et changement d'animation du personnage
 
@@ -296,10 +313,18 @@ def checkforInteraction(): # problemes de collision avec la portée de l'interac
 
 
 def DrawHUD():
+    # *** HUD DU MONSTRE
+    if Monster['MonsterThere'] == True:
+        rect_health_monstre = pygame.Rect(280,750,Monster_health,20) # barre de vie variable
+        pygame.draw.rect(window,(0,0,0),pygame.Rect(270,740,230,40)) # cadre noir de la barre de vie du Player
+        pygame.draw.rect(window,(255,0,0),rect_health_monstre) # on dessine la barre de vie
+
+
+    # *** HUD DU PLAYER
     rect_health = pygame.Rect(35,20,health,20) # barre de vie variable
     rect_armure = pygame.Rect((35,40),(armure,20)) # barre d'armure --> en fonction du nombre d'items du Player
-    pygame.draw.rect(window,(0,0,0),pygame.Rect(30,15,110,30)) # cadre noir de la barre de vie
-    pygame.draw.rect(window,(0,0,0),pygame.Rect(30,45,110,30)) # cadre noir de la barre d'armure
+    pygame.draw.rect(window,(0,0,0),pygame.Rect(30,15,110,30)) # cadre noir de la barre de vie du Player
+    pygame.draw.rect(window,(0,0,0),pygame.Rect(30,45,110,30)) # cadre noir de la barre d'armure du Player
     pygame.draw.rect(window,(255,0,0),rect_health) # on dessine la barre de vie
     pygame.draw.rect(window,(0,0,255),rect_armure) # on dessine la barre d'armure
     lines = 0
@@ -324,14 +349,18 @@ def DrawHUD():
 loop = True
 # on definit le tick rate
 clock = pygame.time.Clock()
-tick_compteur = 0
+tick = 50
+projectile_cooldown = 0
+bullet_cooldown = 0
 mapLoaded = False
 pathToMap = 'tilesetTMX\\spawn_map.tmx'
 while loop == True:
     
     # A utiliser pour plus tard : pygame.time.wait(nMilliseconds)
 
-    clock.tick(50) # meaning it refreshes 25 times a sec --> 1 sec = 25 frames ---- 5 secs = 25 * 5 = 125
+    clock.tick(tick) # meaning it refreshes 25 times a sec --> 1 sec = 25 frames ---- 5 secs = 25 * 5 = 125
+
+    # nous donne un tuple(x,y)
     mousePosition = pygame.mouse.get_pos() # permet de viser l'ennemi pour tirer les projectiles.
     
     
@@ -352,9 +381,9 @@ while loop == True:
 
 
 
-    tick_compteur += 1
-    if tick_compteur == 100:
-        tick_compteur = 0
+    if Monster['MonsterThere'] == True:
+        bullet_cooldown += 1
+        projectile_cooldown += 1
 
     IsProjectile = randint(0,10) # nombre choisi pr determiner si le projectile doit etre lancer --- But etant de tirer aleatoirement des projectiles  
     compteur += 1
@@ -365,19 +394,7 @@ while loop == True:
         elif anim == 32:
             anim = 0
 
-    # definition de la distance x et y entre le monstre et le joueur 
-    dx = (Player['InitPlayerPosition'][0]-Monster['MonsterPosition'][0])
-    dy = (Player['InitPlayerPosition'][1]-Monster['MonsterPosition'][1])
     
-
-    # definition de l'angle entre le monstre et le joueur
-    angle = atan2(dy,dx) # on definit l'angle en radiant d'abord
-    angle = degrees(angle) # transforme les radians en degres
-    VectorMonsterPlayer = (dx , dy)
-
-    ballspeedX = dx / 10 
-    ballspeedY = dy / 10
-    ballspeed = (ballspeedX,ballspeedY)
 
     
     for i in Items:
@@ -386,7 +403,6 @@ while loop == True:
     
     # barre d'armure 
     armure = 25*Player['PlayerItems']+degats # on loot des items, donc on peut augmenter en arumure,elle n;est pas fixe des l'initialisation
-    print(armure)
     # on appelle les fonctions
     
     get_input()
@@ -394,9 +410,25 @@ while loop == True:
     draw()
     checkforInteraction()
     
-    Player['PlayerItems'] = 0
     #Player['PlayerItems'] = 0 # l'image s'est cree, PlayerItems a influence lexecution, on le re-assigne a 0 pour traiter l'image suivante
+    Player['PlayerItems'] = 0
     
+
+    # definition de la distance x et y entre le monstre et le joueur 
+    dx = ((Player['InitPlayerPosition'][0] - 16)-Monster['MonsterPosition'][0])
+    dy = ((Player['InitPlayerPosition'][1]-16)-Monster['MonsterPosition'][1])
+    
+
+    # definition de l'angle entre le monstre et le joueur
+    angle = atan2(dy,dx) # on definit l'angle en radiant d'abord
+    angle = degrees(angle) # transforme les radians en degres
+    VectorMonsterPlayer = (dx , dy)
+
+    ballspeedX = dx / 20 
+    ballspeedY = dy / 20
+    ballspeed = (ballspeedX,ballspeedY)
+
+
     for elt in projectile:    # Premiere boucle qui fait bouger les projectiles
         projectemp = (elt[0] + ballspeed[0], elt[1] + ballspeed[1]) # deplacement du projectile vers sa cible # l_speed[i-1][0] == ballspeedX #
         #print(l_dx[elt],l_dy[elt])
@@ -407,7 +439,7 @@ while loop == True:
         if elt[1]<0 or elt[0] < 0 or elt[1] > 800 or elt[0] > 800:
             projectile.remove(elt)
 
-
+    # defintion de la distance a parcourir entre le Player et le monstre
     bulletspeedx = (mousePosition[0]-Player['InitPlayerPosition'][0]) / 10
     bulletspeedy = (mousePosition[1]-Player['InitPlayerPosition'][1]) / 10
 
@@ -421,6 +453,21 @@ while loop == True:
             bullets.remove(elt)
 
 
+    # definition de la distance a parcourir entre l'arc et le Player
+    arcspeedX = dx / 45
+    arcspeedY = dy / 45
+    arcspeed = (arcspeedX,arcspeedY)
+
+
+    for elt in arc:    # Premiere boucle qui fait bouger les projectiles
+        arctemp = (elt[0] + arcspeed[0], elt[1] + arcspeed[1]) # deplacement du projectile vers sa cible # l_speed[i-1][0] == ballspeedX #
+        #print(l_dx[elt],l_dy[elt])
+        arc.remove(elt)
+        arc.insert(0,arctemp)
+
+    for elt in arc:
+        if elt[1]<0 or elt[0] < 0 or elt[1] > 800 or elt[0] > 800:
+            arc.remove(elt)
     
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
