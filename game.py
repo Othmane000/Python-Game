@@ -213,7 +213,7 @@ def checkCollision(): # pour etablir les collisions entre Player et son environn
     global collisionObj, Player, window
     collisionObj = []
     for obj in tmx_data.objects: # boucle qui va permettre de filtrer entre les differents types d'objets enregistre dans la map
-        if obj.type == 'collision' or obj.type == 'collision_chest':
+        if obj.type == 'collision' or obj.type == 'collision_chest' or obj.type == 'interaction_pnj':
             #creation d'un tuple qui prend l'objet de type collision et cree un Rect de meme taille et coordonne
             #on fait ca pour le comparer au Player['Rect']
             collisionObj.append( {'obj':obj,'Rect': pygame.Rect(obj.x,obj.y,obj.width,obj.height), 'Name': obj.name, 'Type': obj.type} ) # {'obj':obj, 'Rect':pygame.Rect(obj.x- 10,obj.y - 10,obj.width + 10,obj.height + 10), 'Name': obj.name, 'Text':f" Bonjour je suis {obj.name}"}
@@ -286,14 +286,21 @@ def checkforInteraction(): # problemes de collision avec la portée de l'interac
             pygame.draw.rect(window, (255,0,0), pnj['Rect'], 2)
             pygame.display.flip()
             canInteract = True
-            if pnj['obj'].type == 'interaction_static' :
+            if pnj['obj'].name == 'wizard dungeon' :
                 if keyPressed[pygame.K_e] == True and canInteract == True:
                     DrawSpeechBubble(pnj['Text'], pnj['Name'])
             if pnj['obj'].type == 'interaction_pnj' :
                 if keyPressed[pygame.K_e] == True and canInteract == True:
                     DrawSpeechBubble(pnj['Text'], pnj['Name'])
             
-            if pnj['obj'].name == 'chest1' and loot[0] == True : # choisir un item parmis 4 disponible # verifie si le coffre est lootable
+            if pnj['obj'].name == 'villageoise' :
+                if keyPressed[pygame.K_e] == True and canInteract == True:
+                    DrawSpeechBubble(pnj['Text'], pnj['Name'])
+            if pnj['obj'].type == 'interaction_pnj' :
+                if keyPressed[pygame.K_e] == True and canInteract == True:
+                    DrawSpeechBubble(pnj['Text'], pnj['Name'])
+            
+            if pnj['obj'].name == 'chest1' or pnj['obj'].name == 'villageoise' and loot[0] == True : # choisir un item parmis 4 disponible # verifie si le coffre est lootable
                 item = randint(0,3)
                 liste_items = ['casque','plastron','jambiere','gantelet']
                 if keyPressed[pygame.K_e] == True and canInteract == True:
@@ -424,8 +431,8 @@ while loop == True:
     angle = degrees(angle) # transforme les radians en degres
     VectorMonsterPlayer = (dx , dy)
 
-    ballspeedX = dx / 20 
-    ballspeedY = dy / 20
+    ballspeedX = dx / 15 
+    ballspeedY = dy / 15
     ballspeed = (ballspeedX,ballspeedY)
 
 
@@ -454,8 +461,8 @@ while loop == True:
 
 
     # definition de la distance a parcourir entre l'arc et le Player
-    arcspeedX = dx / 45
-    arcspeedY = dy / 45
+    arcspeedX = dx / 35
+    arcspeedY = dy / 35
     arcspeed = (arcspeedX,arcspeedY)
 
 
