@@ -1,3 +1,4 @@
+from distutils.sysconfig import get_makefile_filename
 from webbrowser import WindowsDefault
 import pygame, csv
 from random import randint
@@ -40,6 +41,7 @@ delta_time = [startgame_time] # initialiser la boucle avec le temps a laquelle e
 text_pancarte = pygame.image.load("panneau.png") # fenetre pr interaction avec le pnj
 text_sorcier = pygame.image.load("wizardboard.png")
 text_villageoise = pygame.image.load("villageoise_board.png")
+gameFinished = pygame.image.load("gameFinished.png") # afficher l'image de fin pancarte vous avez gagne ....
 
 # Player dict
 Player= {'PlayerImage':pygame.image.load('player.png'),
@@ -52,7 +54,8 @@ Player= {'PlayerImage':pygame.image.load('player.png'),
 Monster = {'MonsterImage':pygame.transform.scale(pygame.image.load("alien.png"), (64,64)),
  'MonsterPosition': (568,241),
  'MonsterRect': pygame.Rect(568,241,64,64),
- 'MonsterThere': False }
+ 'MonsterThere': False,
+ 'Battu': False }
 
 #Items dict 
 Items={'casque':False,
@@ -69,7 +72,7 @@ health = 100
 degats = 0
 
 # barre de vie du monstre
-Monster_health = 220
+Monster_health = 10
 
 
 
@@ -157,6 +160,7 @@ def draw():
 
         if Monster_health <= 0 :
             Monster['MonsterThere'] = False
+            Monster['Battu'] = True
 
                 
                     
@@ -312,11 +316,6 @@ def checkCollision(): # pour etablir les collisions entre Player et son environn
 
 
 def DrawSpeechBubble(speaker): # interaction avec l'environnement.
-    """
-    
-    """
-
-
     image = speaker
     image = pygame.transform.scale(speaker,(500,75))
     window.blit(image,(0,725))
@@ -428,6 +427,18 @@ def DrawHUD():
     if Items['plastron'] == True:
         casque = pygame.transform.scale(pygame.image.load("assets\\abdominal-armor.png"),(50,50))
         window.blit(casque,(rect_inventaire.x + 325, rect_inventaire.y))
+
+
+def EndGame():
+    global pathToMap, mapLoaded
+    DrawSpeechBubble(gameFinished)
+    print("printed endgame")
+    pygame.display.flip()
+    pygame.time.wait(5000)
+    pathToMap = 'tilesetTMX\\spawn_map.tmx' # on renvoi le joueur a la map initial
+    mapLoaded = False # on refait passer le booleen a False pour reconfigurer la map.
+    
+
 
 loop = True
 # on definit le tick rate
@@ -552,6 +563,11 @@ while loop == True:
         if elt[1]<0 or elt[0] < 0 or elt[1] > 800 or elt[0] > 800:
             arc.remove(elt)
     
+    if Monster['Battu'] == True:
+        EndGame()
+        Monster['Battu'] = False
+
+
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             loop = False
