@@ -1,23 +1,14 @@
-from distutils.sysconfig import get_makefile_filename
-from webbrowser import WindowsDefault
-import pygame, csv
+import pygame
 from random import randint
 from math import atan2, degrees, pi
 from datetime import datetime
 import pytmx
 import pyscroll
 
-
-
-
 pygame.init() 
-
-
 
 window = pygame.display.set_mode((800,800)) # fenetre de taille : 800x800
 pygame.display.set_caption("My Game")
-
-
 
 # Pour tout les objets avec lesquelles on peut interagir 
 canInteract = False # si le joueur est a porte de l'objet
@@ -28,14 +19,6 @@ compteur = 0 # permet de ralentir le changement d'animation par rapport au clock
 
 walk_speed = 1.5
 sprint_speed = 2.75
-direction = 0 # Droite : 1 ; Bas : 2 ; Gauche = 3 ; Haut : 4
-
-# jump
-jump = False
-vel_y = 10
-
-startgame_time = datetime.now()
-delta_time = [startgame_time] # initialiser la boucle avec le temps a laquelle elle a ete cree
 
 # *** texte des personnage avec lesquelles on peut interagir
 text_pancarte = pygame.image.load("panneau.png") # fenetre pr interaction avec le pnj
@@ -46,7 +29,7 @@ gameFinished = pygame.image.load("gameFinished.png") # afficher l'image de fin p
 # Player dict
 Player= {'PlayerImage':pygame.image.load('player.png'),
  'InitPlayerPosition':(200,790),
-  'SpriteSheetPlayerPosition':(0,0),
+  'SpriteSheetPlayerPosition':(0,0), # represente la position sur la sprite sheet de l'image que l'on va prendre.
   'PlayerRect': pygame.Rect(100,400,32,32),
   'PlayerItems': 0}
 
@@ -72,7 +55,7 @@ health = 100
 degats = 0
 
 # barre de vie du monstre
-Monster_health = 10
+Monster_health = 220
 
 
 
@@ -80,8 +63,6 @@ Monster_health = 10
 projectile = []
 arc = []
 bullets = []
-walls = []
-
 
 
 def get_player_image(x,y): # x and y represent the position of the player image on the spritesheet (.png file)
@@ -180,7 +161,7 @@ def draw():
 
 
 def get_input():
-    global keyPressed, anim, speed, direction, projectile, IsProjectile, Player, canInteract, Monster, mousePosition, bullet_cooldown
+    global keyPressed, anim, speed, projectile, IsProjectile, Player, canInteract, Monster, mousePosition, bullet_cooldown
     keyPressed = pygame.key.get_pressed()
     #  *** Gerer le spawn du projectile
     if Monster['MonsterThere'] == True: # afin que les projectiles ne s'accumulent pas tout dans la liste et ne soit pas envoyer tous d'un coup, on evite un bug
@@ -202,7 +183,6 @@ def get_input():
     Player['PlayerRect'].y = Player['InitPlayerPosition'][1]
 
     if keyPressed[pygame.K_w] == True :
-        direction = 4
         if keyPressed[pygame.K_LSHIFT]== True: # LSHIFT touche de sprint -- augmente la vitesse de deplacement
             Player['InitPlayerPosition'] = (Player['InitPlayerPosition'][0], Player['InitPlayerPosition'][1] - sprint_speed) # change la PP du Player pour le mouvement
               
@@ -213,7 +193,6 @@ def get_input():
         
 
     elif keyPressed[pygame.K_s] == True:
-        direction = 2
         if keyPressed[pygame.K_LSHIFT]== True:
             Player['InitPlayerPosition'] = (Player['InitPlayerPosition'][0], Player['InitPlayerPosition'][1] + sprint_speed)
             
@@ -222,7 +201,6 @@ def get_input():
         Player['SpriteSheetPlayerPosition'] = ((64+anim),0)
 
     elif keyPressed[pygame.K_d] == True:
-        direction = 1
         if keyPressed[pygame.K_LSHIFT]== True:
             Player['InitPlayerPosition'] = (Player['InitPlayerPosition'][0]+sprint_speed, Player['InitPlayerPosition'][1])
  
@@ -231,7 +209,6 @@ def get_input():
         Player['SpriteSheetPlayerPosition'] = ((64+anim),32)
 
     elif keyPressed[pygame.K_a] == True:
-        direction = 3
         if keyPressed[pygame.K_LSHIFT]== True:
             Player['InitPlayerPosition'] = (Player['InitPlayerPosition'][0]-sprint_speed, Player['InitPlayerPosition'][1])
         
@@ -256,37 +233,6 @@ def checkCollision(): # pour etablir les collisions entre Player et son environn
     
     for obj in collisionObj:
         if pygame.Rect.colliderect(Player['PlayerRect'], obj['Rect']):
-
-            """# Collision avec un objet cote DROIT (de l'objet)        
-            if direction == 3 and (obj['Rect'].right + obj['Rect'].width)-Player['PlayerRect'].left > 0 and Player['InitPlayerPosition'][0] > obj['Rect'].x: # and (Player['InitPlayerPosition'][0] - (rect[1].x + rect[1].width)) >= 0
-                print(f"COLLIDE ON RIGHT SIDE OF THE OBJECT {obj['Name']}")
-                pygame.draw.rect(window, (255,0,0), obj['Rect'], 2)
-                pygame.display.flip()
-                Player['InitPlayerPosition']= ((obj['Rect'].x + obj['Rect'].width + 3), Player['InitPlayerPosition'][1])
-"""
-# Collision avec un objet cote GAUCHE (de l'objet)
-            """elif direction == 1 and obj['Rect'].left - Player['PlayerRect'].right < 0 and Player['InitPlayerPosition'][0] < (obj['Rect'].x + obj['Rect'].width): 
-                print(f"COLLIDE ON LEFT SIDE OF THE OBJECT {obj['Name']}")
-                pygame.draw.rect(window, (255,0,0), obj['Rect'], 2)
-                pygame.display.flip()
-                Player['InitPlayerPosition']= ((obj['Rect'].x - Player['PlayerRect'].width - 3), Player['InitPlayerPosition'][1])
-            """
-
-            """
-            elif direction == 4 and (obj['Rect'].bottom - Player['PlayerRect'].top) > 0 and Player['PlayerRect'].y < (obj['Rect'].y + obj['Rect'].height):
-                print(f"COLLIDE ON BOTTOM SIDE OF THE OBJECT {obj['Name']}")
-                pygame.draw.rect(window, (255,0,0), obj['Rect'], 2)
-                pygame.display.flip()
-                Player['InitPlayerPosition']= (Player['InitPlayerPosition'][0],(obj['Rect'].y + obj['Rect'].height + 3))
-    
-            # Collision avec un objet cote TOP (de l'objet)
-            elif direction == 2 and (obj['Rect'].top - Player['PlayerRect'].bottom) < 0 and (Player['PlayerRect'].y + Player['PlayerRect'].height) > obj['Rect'].y:
-                print(f"COLLIDE ON TOP SIDE OF THE OBJECT {obj['Name']}")
-                pygame.draw.rect(window, (255,0,0), obj['Rect'], 2)
-                pygame.display.flip()
-                Player['InitPlayerPosition']= (Player['InitPlayerPosition'][0],(obj['Rect'].y - Player['PlayerRect'].height - 3))
-            
-            """
            
             # Collision avec un objet cote DROIT (de l'objet)
             if obj['Rect'].right < Player['PlayerRect'].right:
@@ -379,7 +325,7 @@ def checkforInteraction(): # problemes de collision avec la portée de l'interac
                     pathToMap = 'tilesetTMX\\dungeon.tmx'
                     Monster['MonsterThere'] = True
                     
-
+        canInteract = False
 
 def DrawHUD():
     # *** HUD DU MONSTRE
@@ -469,12 +415,10 @@ while loop == True:
 
         # dessiner le groupe de calque 
         calqueGroupe = pyscroll.PyscrollGroup(map_layer)
-        mapLoaded = True
+        mapLoaded = True # permet d'enregistrer une map dans calqueGroupe et de bloquer la re-creation de la map
+        # jusqu'a qu'on change de map et que mapLoaded repasse a False, qui fait le process a nouveau
     
     
-
-
-
     if Monster['MonsterThere'] == True:
         bullet_cooldown += 1
         projectile_cooldown += 1
@@ -511,11 +455,6 @@ while loop == True:
     # definition de la distance x et y entre le monstre et le joueur 
     dx = ((Player['InitPlayerPosition'][0] - 16)-Monster['MonsterPosition'][0])
     dy = ((Player['InitPlayerPosition'][1]-16)-Monster['MonsterPosition'][1])
-    
-
-    # definition de l'angle entre le monstre et le joueur
-    angle = atan2(dy,dx) # on definit l'angle en radiant d'abord
-    angle = degrees(angle) # transforme les radians en degres
     VectorMonsterPlayer = (dx , dy)
 
     ballspeedX = dx / 15 
