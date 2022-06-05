@@ -5,6 +5,17 @@ from datetime import datetime
 import pytmx
 import pyscroll
 
+
+""""
+- On se deplace avec les touche WASD ou ZQSD 
+
+- Lorsqu'on s'approche d'un villageois, d'un coffre ou d'une porte,
+    on peut interagir avec E
+
+"""
+
+
+
 pygame.init() 
 
 window = pygame.display.set_mode((800,800)) # fenetre de taille : 800x800
@@ -82,7 +93,7 @@ def draw():
     DrawHUD()
     checkforInteraction()
     window.blit(player, (Player['InitPlayerPosition'][0], Player['InitPlayerPosition'][1]))
-    pygame.draw.rect(window,(0,0,255),Player['PlayerRect'], 2) # on dessine la hitbox du Player
+    #pygame.draw.rect(window,(0,0,255),Player['PlayerRect'], 2) # on dessine la hitbox du Player
     pygame.draw.line(window,(255,255,255),Player['InitPlayerPosition'],(mousePosition[0],mousePosition[1]), width=1) # essayer de reduire la taille de la ligne
     
 
@@ -101,10 +112,9 @@ def draw():
 
 
     
+  
     if Monster['MonsterThere'] == True:
-        pygame.draw.rect(window,(0,0,255),Monster['MonsterRect'], 2) # on dessine la hitbox du Monstre
-    
-    if Monster['MonsterThere'] == True:
+        #pygame.draw.rect(window,(0,0,255),Monster['MonsterRect'], 2) # on dessine la hitbox du Monstre
         window.blit(Monster['MonsterImage'], (Monster['MonsterPosition'][0], Monster['MonsterPosition'][1]))
 
     if Monster['MonsterThere'] == True:
@@ -275,7 +285,7 @@ def checkforInteraction(): # problemes de collision avec la portée de l'interac
     
     for pnj in interactionObj:
         if pnj['Rect'].colliderect(Player['PlayerRect']) :
-            pygame.draw.rect(window, (255,0,0), pnj['Rect'], 2)
+            #pygame.draw.rect(window, (255,0,0), pnj['Rect'], 2) # permet d'afficher rect rouge lorsqu'on peut interagir.
             pygame.display.flip()
             canInteract = True
             if pnj['obj'].name == 'wizard dungeon' :
