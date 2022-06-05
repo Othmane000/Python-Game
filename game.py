@@ -187,7 +187,6 @@ def get_input():
             Player['InitPlayerPosition'] = (Player['InitPlayerPosition'][0], Player['InitPlayerPosition'][1] - sprint_speed) # change la PP du Player pour le mouvement
               
         Player['InitPlayerPosition'] = (Player['InitPlayerPosition'][0], Player['InitPlayerPosition'][1] - walk_speed)
-        #Player['PlayerRect'].y = Player['PlayerRect'].y - 5
         Player['SpriteSheetPlayerPosition'] = (anim,0)
 
         
@@ -197,7 +196,6 @@ def get_input():
             Player['InitPlayerPosition'] = (Player['InitPlayerPosition'][0], Player['InitPlayerPosition'][1] + sprint_speed)
             
         Player['InitPlayerPosition'] = (Player['InitPlayerPosition'][0], Player['InitPlayerPosition'][1] + walk_speed)
-        #Player['PlayerRect'].y = Player['PlayerRect'].y + 5
         Player['SpriteSheetPlayerPosition'] = ((64+anim),0)
 
     elif keyPressed[pygame.K_d] == True:
@@ -205,7 +203,6 @@ def get_input():
             Player['InitPlayerPosition'] = (Player['InitPlayerPosition'][0]+sprint_speed, Player['InitPlayerPosition'][1])
  
         Player['InitPlayerPosition'] = (Player['InitPlayerPosition'][0]+walk_speed, Player['InitPlayerPosition'][1])
-        #Player['PlayerRect'].x = Player['PlayerRect'].x + 5
         Player['SpriteSheetPlayerPosition'] = ((64+anim),32)
 
     elif keyPressed[pygame.K_a] == True:
@@ -213,7 +210,6 @@ def get_input():
             Player['InitPlayerPosition'] = (Player['InitPlayerPosition'][0]-sprint_speed, Player['InitPlayerPosition'][1])
         
         Player['InitPlayerPosition'] = (Player['InitPlayerPosition'][0]-walk_speed, Player['InitPlayerPosition'][1])
-        #Player['PlayerRect'].x = Player['PlayerRect'].x - 5
         Player['SpriteSheetPlayerPosition'] = (anim,32)
 
 
@@ -223,7 +219,7 @@ def get_input():
  
 def checkCollision(): # pour etablir les collisions entre Player et son environnement
     global collisionObj, Player, window
-    collisionObj = []
+    collisionObj = [] # liste qui va contenir des dictionnaires
     for obj in tmx_data.objects: # boucle qui va permettre de filtrer entre les differents types d'objets enregistre dans la map
         if obj.type == 'collision' or obj.type == 'collision_chest' or obj.type == 'interaction_pnj':
             #creation d'un tuple qui prend l'objet de type collision et cree un Rect de meme taille et coordonne
@@ -271,7 +267,6 @@ def checkforInteraction(): # problemes de collision avec la portée de l'interac
     global interactionObj, canInteract, pathToMap, mapLoaded, tmx_data
     interactionObj = []
     for obj in tmx_data.objects: # boucle qui va permettre de filtrer entre les differents types d'objets enregistre dans la map
-        #print(f"tmx_data.objects: {obj.type} ; {obj.name}")
         if obj.type == 'interaction_static' or obj.type == 'dungeon_door' or obj.type == 'interaction_pnj' or obj.type == 'collision_chest' :
             #creation d'un tuple qui prend l'objet de type collision et cree un Rect de meme taille et coordonne
             #on fait ca pour le comparer au Player['Rect']
@@ -280,7 +275,6 @@ def checkforInteraction(): # problemes de collision avec la portée de l'interac
     
     for pnj in interactionObj:
         if pnj['Rect'].colliderect(Player['PlayerRect']) :
-            #print(interactionObj)
             pygame.draw.rect(window, (255,0,0), pnj['Rect'], 2)
             pygame.display.flip()
             canInteract = True
@@ -298,7 +292,6 @@ def checkforInteraction(): # problemes de collision avec la portée de l'interac
             
             if pnj['obj'].name == 'chest1' and loot[0] == True : # choisir un item parmis 4 disponible # verifie si le coffre est lootable
                  # c'est possible de looter deux fois le meme objets, effet de n'avoir rien loot.
-                print(loot[0])
                 item = randint(0,3)
                 liste_items = ['casque','plastron','jambiere','gantelet']
                 if keyPressed[pygame.K_e] == True and canInteract == True:
@@ -308,12 +301,10 @@ def checkforInteraction(): # problemes de collision avec la portée de l'interac
 
             if pnj['obj'].name == 'chest2' and loot[1] == True : # choisir un item parmis 4 disponible # verifie si le coffre est lootable
                 # c'est possible de looter deux fois le meme objets, effet de n'avoir rien loot.
-                print(loot[1])
                 item = randint(0,3)
                 liste_items = ['casque','plastron','jambiere','gantelet']
                 if keyPressed[pygame.K_e] == True and canInteract == True:
                     Items[liste_items[item]] = True 
-                    print(liste_items[item])
                     loot[1] = False
                 
 
@@ -378,7 +369,6 @@ def DrawHUD():
 def EndGame():
     global pathToMap, mapLoaded
     DrawSpeechBubble(gameFinished)
-    print("printed endgame")
     pygame.display.flip()
     pygame.time.wait(5000)
     pathToMap = 'tilesetTMX\\spawn_map.tmx' # on renvoi le joueur a la map initial
@@ -398,7 +388,7 @@ while loop == True:
     
     # A utiliser pour plus tard : pygame.time.wait(nMilliseconds)
 
-    clock.tick(tick) # meaning it refreshes 25 times a sec --> 1 sec = 25 frames ---- 5 secs = 25 * 5 = 125
+    clock.tick(tick) # rafraichissement
 
     # nous donne un tuple(x,y)
     mousePosition = pygame.mouse.get_pos() # permet de viser l'ennemi pour tirer les projectiles.
@@ -464,7 +454,6 @@ while loop == True:
 
     for elt in projectile:    # Premiere boucle qui fait bouger les projectiles
         projectemp = (elt[0] + ballspeed[0], elt[1] + ballspeed[1]) # deplacement du projectile vers sa cible # l_speed[i-1][0] == ballspeedX #
-        #print(l_dx[elt],l_dy[elt])
         projectile.remove(elt)
         projectile.insert(0,projectemp)
 
@@ -494,7 +483,6 @@ while loop == True:
 
     for elt in arc:    # Premiere boucle qui fait bouger les projectiles
         arctemp = (elt[0] + arcspeed[0], elt[1] + arcspeed[1]) # deplacement du projectile vers sa cible # l_speed[i-1][0] == ballspeedX #
-        #print(l_dx[elt],l_dy[elt])
         arc.remove(elt)
         arc.insert(0,arctemp)
 
