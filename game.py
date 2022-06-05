@@ -21,20 +21,20 @@ walk_speed = 1.5
 sprint_speed = 2.75
 
 # *** texte des personnage avec lesquelles on peut interagir
-text_pancarte = pygame.image.load("panneau.png") # fenetre pr interaction avec le pnj
-text_sorcier = pygame.image.load("wizardboard.png")
-text_villageoise = pygame.image.load("villageoise_board.png")
-gameFinished = pygame.image.load("gameFinished.png") # afficher l'image de fin pancarte vous avez gagne ....
+text_pancarte = pygame.image.load("assets/panneau.png") # fenetre pr interaction avec le pnj
+text_sorcier = pygame.image.load("assets/wizardboard.png")
+text_villageoise = pygame.image.load("assets/villageoise_board.png")
+gameFinished = pygame.image.load("assets/gameFinished.png") # afficher l'image de fin pancarte vous avez gagne ....
 
 # Player dict
-Player= {'PlayerImage':pygame.image.load('player.png'),
+Player= {'PlayerImage':pygame.image.load('assets/player.png'),
  'InitPlayerPosition':(200,790),
   'SpriteSheetPlayerPosition':(0,0), # represente la position sur la sprite sheet de l'image que l'on va prendre.
   'PlayerRect': pygame.Rect(100,400,32,32),
   'PlayerItems': 0}
 
 # Monster dict
-Monster = {'MonsterImage':pygame.transform.scale(pygame.image.load("alien.png"), (64,64)),
+Monster = {'MonsterImage':pygame.transform.scale(pygame.image.load("assets/alien.png"), (64,64)),
  'MonsterPosition': (568,241),
  'MonsterRect': pygame.Rect(568,241,64,64),
  'MonsterThere': False,
