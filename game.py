@@ -1,7 +1,6 @@
 import pygame
 from random import randint
-from math import atan2, degrees, pi
-from datetime import datetime
+from math import pi
 import pytmx
 import pyscroll
 
